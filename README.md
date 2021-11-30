@@ -1,6 +1,6 @@
 # donut.py
 
-![A spinning donut](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)
+![A spinning donut](https://raw.githubusercontent.com/minhphd/donut.py/main/donut.gif)
 
 A very crude version of the famous spinning donut.
 
