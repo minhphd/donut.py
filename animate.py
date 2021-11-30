@@ -1,7 +1,7 @@
 from math import pi
 from scipy.spatial.transform import Rotation as R
 import numpy as np
-from shape.donut import draw_donut
+from shape.generator import draw_donut, draw_box
 import curses
 
 rows, cols = (40, 80)
@@ -10,6 +10,7 @@ R1, R2 = (6,6)
 axis_x, axis_y, axis_z = (np.array([1,0,0]), np.array([0,1,0]), np.array([0,0,1]))
 init_r = np.array([cols/2,0,cols/2])
 dic, i = draw_donut(R1, R2, init_r)
+# dic, i = draw_box(20,20,20,init_r)
 light = np.array([0,-1,1])
 
 def vector_rotate(vec, angle, axis):
@@ -26,14 +27,13 @@ for idx in range(i):
     dic[idx] = {"coord": r, "n": n}
 
 def draw(terminal):
-
     terminal.clear()
     terminal.refresh()
     theta = 0
     k = 0
     terminal.nodelay(True)
     while k != ord('q'):
-        new_dic = {}
+        points = []
         shade = []
         k = terminal.getch()
         for idx in range(i):
@@ -41,16 +41,18 @@ def draw(terminal):
             n0 = dic[idx]["n"]
             r = vector_rotate(r0, theta, axis_z) + init_r
             n = vector_rotate(n0, theta, axis_z)
-            new_dic[idx] = {"coord": r, "n": n}
+            points.append(r.tolist())
             shade.append(np.dot(n, light))
 
         terminal.clear()
         curses.resize_term(rows, cols)
         terminal.border(0)
+        shade = [x for _, x in sorted(zip(points, shade), key=lambda pair: pair[0][1])]
+        points.sort(key=lambda x: x[1])
         min_illu = min(shade)
         max_illu = max(shade)
         for idx in range(i):
-            x, y, z = new_dic[idx]["coord"].tolist()
+            x, y, z = points[idx]
             illu = (shade[idx] - min_illu)*11/(max_illu - min_illu)
             string = scale[round(illu)]
             terminal.addstr(round(z * rows/cols), round(x), string, curses.A_BOLD)
