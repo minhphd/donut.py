@@ -20,7 +20,7 @@ def vector_rotate(vec, angle, axis):
 
 def draw_donut(R1, R2, init_r):
     dic = {}
-    theta_arr = linspace(0, 2*pi, 60).tolist()
+    theta_arr = linspace(0, 2*pi, 100).tolist()
     circle = []
     surface_normal = []
     i = 0
@@ -41,7 +41,6 @@ def draw_donut(R1, R2, init_r):
             dic[i] = {"coord": r, "n": n}
             i += 1
 
-    print(i)
     return dic
 
 
