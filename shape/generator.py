@@ -1,4 +1,4 @@
-from numpy import asarray, array, linspace, dot
+from numpy import asarray, array, linspace, dot, deg2rad
 from math import pi, sin, cos, sqrt
 
 axis_x, axis_y, axis_z = (array([1,0,0]), array([0,1,0]), array([0,0,1]))
@@ -20,7 +20,7 @@ def vector_rotate(vec, angle, axis):
 
 def draw_donut(init_r, fields):
     dic = {}
-    R1, R2, steps, dt = fields
+    filename, R1, R2, steps, dalpha, dbeta, dtheta, frames= fields
     R1, R2, steps = int(R1), int(R2), int(steps)
     theta_arr = linspace(0, 2*pi, steps).tolist()
     circle = []
@@ -43,15 +43,15 @@ def draw_donut(init_r, fields):
             dic[i] = {"coord": r, "n": n}
             i += 1
 
-    return dic
+    return dic, deg2rad(int(dalpha)), deg2rad(int(dbeta)), deg2rad(int(dtheta)), int(frames), filename
 
 
 def draw_box(init_r, fields):
-    w, h, l, dt = fields
+    filename, w, h, l, dalpha, dbeta, dtheta, frames= fields
     w, h, l = int(w), int(h), int(l)
-    width = linspace(-w/2, w/2, 15)
-    length = linspace(-l/2, l/2, 15)
-    height = linspace(-h/2, h/2, 15)
+    width = linspace(-w/2, w/2, 30)
+    length = linspace(-l/2, l/2, 30)
+    height = linspace(-h/2, h/2, 30)
     dic = {}
     i = 0
     for x in width:
@@ -85,7 +85,7 @@ def draw_box(init_r, fields):
             dic[i] = {"coord": r, "n": n}
             i += 1
     # print(count)
-    return dic
+    return dic, deg2rad(int(dalpha)), deg2rad(int(dbeta)), deg2rad(int(dtheta)), int(frames), filename
 
 
 # draw_donut(5,5,np.array([0,0,0]))

@@ -123,10 +123,10 @@ def select_save_file(terminal):
 def render_wizard(terminal, type):
     k = 0
     if type == "donut":
-        labels = ["Inner radius: ", "Crust radius: ", "Number of samples between 0 and 2pi: ", "Time between frames(milliseconds): "]
+        labels = ["file name: ", "Inner radius: ", "Crust radius: ", "Number of samples between 0 and 2pi: ", "rate of rotation around x axis: ", "rate of rotation around y axis: ", "rate of rotation around z axis: ", "Number of frames: "]
     elif type == "box":
-        labels = ["Width: ", "Height: ", "Length: ", "Time between frames(milliseconds): "]
-    fields = ["__________"]*len(labels) + ["", "RENDER", "BACK TO MENU"]
+        labels = ["file name: ", "Width: ", "Height: ", "Length: ", "rate of rotation around x axis: ", "rate of rotation around y axis: ", "rate of rotation around z axis: ", "Number of frames: "]
+    fields = [f'{type}-{datetime.today().strftime("%Y%m%dT%H%M%S%z")}'] + ["__________"]*(len(labels) - 1) + ["", "RENDER", "BACK TO MENU"]
     option_index = 0
     selected = False
     while True:
@@ -174,7 +174,7 @@ def render_wizard(terminal, type):
                     if k == 8:
                         terminal.delch(y,x)
                         string = string[:len(string)-1]
-                    if k<48 or k>57:
+                    if (k<48 or k>57) and option_index != 0:
                         terminal.delch(y,x-1)
                     else:
                         string += chr(k)
@@ -197,19 +197,10 @@ def render(terminal, type, fields):
     k = 0
     selected = False
     if type == "donut":
-        dic = draw_donut(init_r, fields)
+        dic, dalpha, dbeta, dtheta, t, filename = draw_donut(init_r, fields)
     if type == "box":
-        dic = draw_box(init_r, fields)
-    
-    for key in dic.keys():
-        r0 = dic[key]["coord"] - init_r
-        n0 = dic[key]["n"]
-        r = vector_rotate(r0, pi/6, axis_x) + init_r
-        n = vector_rotate(n0, pi/6, axis_x)
-        dic[key] = {"coord": r, "n": n}
-    dtheta = pi/60
-    vertical_rot = False
-    frames = [2*pi/dtheta, [], [], int(fields[len(fields)-1])]
+        dic, dalpha, dbeta, dtheta, t, filename = draw_box(init_r, fields)
+    frames = [t, [], [], int(fields[len(fields)-1])]
     frame_num = 0
     
     terminal.clear()
@@ -219,13 +210,17 @@ def render(terminal, type, fields):
         terminal.clear()
         
         for key in dic.keys():
-            r0 = dic[key]["coord"]- init_r
-            n0 = dic[key]["n"]
-            r = vector_rotate(r0, dtheta, axis_z)
-            n = vector_rotate(n0, dtheta, axis_z)
-            if vertical_rot:
-                r = vector_rotate(r, dtheta, axis_x)
-                n = vector_rotate(r, dtheta, axis_x)
+            r = dic[key]["coord"]- init_r
+            n = dic[key]["n"]
+            if dalpha != 0:
+                r = vector_rotate(r, dalpha, axis_x)
+                n = vector_rotate(n, dalpha, axis_x)
+            if dbeta != 0:
+                r = vector_rotate(r, dtheta, axis_y)
+                n = vector_rotate(n, dtheta, axis_y)
+            if dtheta != 0:
+                r = vector_rotate(r, dtheta, axis_z)
+                n = vector_rotate(n, dtheta, axis_z)
             r = r + init_r
             dic[key] = {"coord": r,"n": n, "L": dot(n, light)}
         
@@ -259,8 +254,7 @@ def render(terminal, type, fields):
 
     option = 0
     terminal.nodelay(False)
-
-    filename = f'save-files/{type}-{datetime.today().strftime("%Y%m%dT%H%M%S%z")}'
+    filename = "save-files/" + filename
     outfile = open(filename, 'wb')
     pickle.dump(frames, outfile)
     outfile.close()
@@ -286,7 +280,6 @@ def render(terminal, type, fields):
                 selected = False
                 return 
 
-        #to be updated
         title = "Animation is rendered and saved in save file folder"[:cols-1]
         option1 = "play animation"[:cols-1]
         option2 = "return to menu"[:cols-1]
@@ -304,7 +297,6 @@ def render(terminal, type, fields):
 
         x, y = get_center_pos(options[len(options)-1-option], cols, rows)
         terminal.addstr(y+len(options)-1-option, x, options[len(options)-1-option])
-        terminal.addstr(1,1,str(option))
         k = terminal.getch()
         terminal.refresh()
         terminal.move(0,0)
@@ -318,10 +310,15 @@ def run_saved(terminal, filename):
     
     k = 0
     i = 0
+    dt = 0
     terminal.nodelay(True)
     while True:
         if k == ord('q'):
-            return    
+            return
+        elif k == UP_KEY:
+            dt += 5
+        elif k == DOWN_KEY and dt - 5 >= 0:
+            dt -= 5    
         frame = frames[1][i]
         terminal.clear()
         curses.resize_term(rows, cols)
@@ -331,6 +328,8 @@ def run_saved(terminal, filename):
         title = "press 'q' to return to menu"
         x, y = get_center_pos(title, cols, rows)
         terminal.addstr(rows - 3, x, title)
+        spf = f"milliseconds between frames: {dt}"
+        terminal.addstr(0,0,spf)
         for row in range(rows):
             for col in range(cols):
                 if frame[row][col] != [float("-inf"),0]:
@@ -343,7 +342,7 @@ def run_saved(terminal, filename):
         i += 1
 
         k = terminal.getch()
-        terminal.timeout(frames[len(frames)-1])
+        terminal.timeout(dt)
         terminal.move(0,0)
         terminal.refresh()
 
