@@ -18,9 +18,11 @@ def vector_rotate(vec, angle, axis):
     M0 = rotation_matrix(axis, angle)
     return dot(M0, vec)
 
-def draw_donut(R1, R2, init_r):
+def draw_donut(init_r, fields):
     dic = {}
-    theta_arr = linspace(0, 2*pi, 100).tolist()
+    R1, R2, steps, dt = fields
+    R1, R2, steps = int(R1), int(R2), int(steps)
+    theta_arr = linspace(0, 2*pi, steps).tolist()
     circle = []
     surface_normal = []
     i = 0
@@ -44,7 +46,9 @@ def draw_donut(R1, R2, init_r):
     return dic
 
 
-def draw_box(w, l, h, init_r):
+def draw_box(init_r, fields):
+    w, h, l, dt = fields
+    w, h, l = int(w), int(h), int(l)
     width = linspace(-w/2, w/2, 15)
     length = linspace(-l/2, l/2, 15)
     height = linspace(-h/2, h/2, 15)

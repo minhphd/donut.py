@@ -8,7 +8,8 @@ import os
 Running = True
 rows, cols = 40, 80
 scale = ".,-~:;=!*#$@"
-
+UP_KEY, DOWN_KEY, RIGHT_KEY = 259, 258, 261
+# UP_KEY, DOWN_KEY, RIGHT_KEY = ord('w'), ord('s'), ord('d') 
 axis_x, axis_y, axis_z = (array([1,0,0]), array([0,1,0]), array([0,0,1]))
 init_r = array([cols/2,0,cols/2])
 light = array([0,-1,1])
@@ -23,32 +24,19 @@ def menu(terminal):
     option_index = 0
     k = 0
     selected = False
-
+    
+    
     while True:
+        
         terminal.clear()
         curses.resize_term(rows, cols) 
-        terminal.border(0)
         
-        if k == ord('w'):
-            if option_index > 0:
-                option_index -= 1
-        elif k == ord('s'):
-            if option_index < 3:
-                option_index += 1
-        elif k == ord('d'):
-            selected = True
+        
+        ltitle = "3D ASCII VIEWER"
+        terminal.addstr(0, 1, ltitle, curses.A_BOLD)
 
-        if selected:
-            if option_index == 0:
-                return render(terminal, "donut")
-            if option_index == 1:
-                return render(terminal, "box")
-            if option_index == 2:
-                return select_save_file(terminal)
-            if option_index == 3:
-                selected = False
-                Running = False
-                return
+        rtitle = "by Minh Pham Dinh"
+        terminal.addstr(0, cols - len(rtitle) - 1, rtitle, curses.A_BOLD)
 
         # options
         option1 = "render new donut animation"[:cols - 1]
@@ -56,19 +44,36 @@ def menu(terminal):
         option3 = "run save files"[:cols - 1]
         option4 = "exit program"[:cols - 1]
 
-        options = [option1, option2, option3, option4]        
+        options = [option1, option2, option3, option4]      
 
-        terminal.attron(curses.color_pair(1))
-        terminal.attron(curses.A_STANDOUT)
+        if k == UP_KEY:
+            if option_index > 0:
+                option_index -= 1
+        elif k == DOWN_KEY:
+            if option_index < len(options) - 1:
+                option_index += 1
+        elif k == RIGHT_KEY:
+            selected = True
 
-        terminal.addstr(option_index + 1,1, options[option_index])
+        if selected:
+            if option_index == 0:
+                return render_wizard(terminal, "donut")
+            if option_index == 1:
+                return render_wizard(terminal, "box")
+            if option_index == 2:
+                return select_save_file(terminal)
+            if option_index == 3:
+                selected = False
+                Running = False
+                return  
 
-        terminal.attroff(curses.color_pair(1))
-        terminal.attroff(curses.A_STANDOUT)
-
-        for i in range( 4 ):
-            if i != option_index:
-                terminal.addstr(i + 1,1, options[i])
+        for i in range(len(options)):
+            if i == option_index:
+                terminal.attron(curses.A_STANDOUT)
+                terminal.attron(curses.color_pair(1))
+            terminal.addstr(i+2, 1, options[i])
+            terminal.attroff(curses.A_STANDOUT)
+            terminal.attroff(curses.color_pair(1))
 
         k = terminal.getch()
 
@@ -81,44 +86,120 @@ def select_save_file(terminal):
     while True:
         terminal.clear()
         curses.resize_term(rows, cols) 
-        terminal.border(0)
+        
 
         # options
         options = os.listdir("save-files/")
 
-        if k == ord('w'):
+        if k == UP_KEY:
             if option_index > 0:
                 option_index -= 1
-        elif k == ord('s'):
+        elif k == DOWN_KEY:
             if option_index < len(options)-1:
                 option_index += 1
-        elif k == ord('d'):
+        elif k == RIGHT_KEY:
             selected = True
+        elif k == ord('q'):
+            return
 
         if selected:
             return run_saved(terminal, f"save-files/{options[option_index]}")
-        
-        terminal.attron(curses.color_pair(1))
-        terminal.attron(curses.A_STANDOUT)
 
-        terminal.addstr(option_index + 1,1, options[option_index])
+        cwd = f"{os.getcwd()}\\save-files"
+        terminal.addstr(0,1, cwd)
+        title = "SAVE FILES"
+        terminal.addstr(0, cols - len(title) - 1, title, curses.A_BOLD)
 
-        terminal.attroff(curses.color_pair(1))
-        terminal.attroff(curses.A_STANDOUT)
-
-        for i in range( len(options) ):
-            if i != option_index:
-                terminal.addstr(i + 1,1, options[i])
-
+        for i in range(len(options)):
+            if i == option_index:
+                terminal.attron(curses.A_STANDOUT)
+                terminal.attron(curses.color_pair(1))
+            terminal.addstr(i+2, 1, options[i])
+            terminal.attroff(curses.A_STANDOUT)
+            terminal.attroff(curses.color_pair(1))
+        # terminal.addstr(rows -10, cols-10, str(k))
         k = terminal.getch()
 
-def render(terminal, type):
+def render_wizard(terminal, type):
+    k = 0
+    if type == "donut":
+        labels = ["Inner radius: ", "Crust radius: ", "Number of samples between 0 and 2pi: ", "Time between frames(milliseconds): "]
+    elif type == "box":
+        labels = ["Width: ", "Height: ", "Length: ", "Time between frames(milliseconds): "]
+    fields = ["__________"]*len(labels) + ["", "RENDER", "BACK TO MENU"]
+    option_index = 0
+    selected = False
+    while True:
+        terminal.clear()
+        curses.resize_term(rows, cols)
+
+        title = f'{type.upper()} RENDERING WIZARD'
+        terminal.addstr(0, cols - len(title) - 1, title)
+        fields_x = 0
+        for i, label in enumerate(labels):
+            terminal.addstr(i+2, 1, label)
+            if len(label) > fields_x:
+                fields_x = len(label) + 1
+        
+        if k == UP_KEY:
+            if option_index > 0:
+                option_index -= 1
+        elif k == DOWN_KEY:
+            if option_index < len(fields) - 1:
+                option_index += 1
+        elif k == RIGHT_KEY:
+            selected = True
+        
+        for i in range(len(fields)):
+            if i == option_index:
+                terminal.attron(curses.A_STANDOUT)
+                terminal.attron(curses.color_pair(1))
+            terminal.addstr(i+2, fields_x, fields[i])
+            terminal.attroff(curses.A_STANDOUT)
+            terminal.attroff(curses.color_pair(1))
+        terminal.move(option_index+2, fields_x)
+
+        if selected:
+            selected = False
+            if option_index < len(labels):
+                curses.echo()
+                curses.curs_set(2)
+                for i in range(len(fields[option_index])):
+                    terminal.delch(option_index+2,fields_x)
+                terminal.move(option_index+2, fields_x)
+                string = ""
+                k = terminal.getch()
+                while k != RIGHT_KEY:
+                    y, x = terminal.getyx()
+                    if k == 8:
+                        terminal.delch(y,x)
+                        string = string[:len(string)-1]
+                    if k<48 or k>57:
+                        terminal.delch(y,x-1)
+                    else:
+                        string += chr(k)
+                    k = terminal.getch()
+                curses.curs_set(1)
+                curses.noecho()
+                terminal.delch(y, x)
+                if string != "":
+                    fields[option_index] = string
+            elif fields[option_index] == "RENDER":
+                if "__________" not in fields:
+                    return render(terminal, type, fields[:len(fields)-3])
+            elif fields[option_index] == "BACK TO MENU":
+                return menu(terminal)
+        k = terminal.getch()
+        terminal.refresh()
+        terminal.move(0,0)
+
+def render(terminal, type, fields):
     k = 0
     selected = False
     if type == "donut":
-        dic = draw_donut(8,8,init_r)
+        dic = draw_donut(init_r, fields)
     if type == "box":
-        dic = draw_box(20,20, 20,init_r)
+        dic = draw_box(init_r, fields)
     
     for key in dic.keys():
         r0 = dic[key]["coord"] - init_r
@@ -128,7 +209,7 @@ def render(terminal, type):
         dic[key] = {"coord": r, "n": n}
     dtheta = pi/60
     vertical_rot = False
-    frames = [2*pi/dtheta, [], []]
+    frames = [2*pi/dtheta, [], [], int(fields[len(fields)-1])]
     frame_num = 0
     
     terminal.clear()
@@ -136,7 +217,7 @@ def render(terminal, type):
     while frame_num < frames[0]:
         curses.resize_term(rows, cols)
         terminal.clear()
-        terminal.border(0)
+        
         for key in dic.keys():
             r0 = dic[key]["coord"]- init_r
             n0 = dic[key]["n"]
@@ -187,15 +268,15 @@ def render(terminal, type):
     while True:
         curses.resize_term(rows, cols)
         terminal.clear()
-        terminal.border(0)
         
-        if k == ord('w'):
+        
+        if k == UP_KEY:
             if option > 0:
                     option -= 1
-        elif k == ord('s'):
+        elif k == DOWN_KEY:
             if option < 1:
                 option += 1
-        elif k == ord('d'):
+        elif k == RIGHT_KEY:
             selected = True
 
         if selected:
@@ -234,7 +315,7 @@ def run_saved(terminal, filename):
     file.close()
     terminal.clear()
     terminal.refresh()
-    terminal.border(0)
+    
     k = 0
     i = 0
     terminal.nodelay(True)
@@ -244,7 +325,7 @@ def run_saved(terminal, filename):
         frame = frames[1][i]
         terminal.clear()
         curses.resize_term(rows, cols)
-        terminal.border(0)
+        
         scale = ".,-~:;=!*#$@"
         min_illu, max_illu = frames[2][i]
         title = "press 'q' to return to menu"
@@ -262,7 +343,7 @@ def run_saved(terminal, filename):
         i += 1
 
         k = terminal.getch()
-        terminal.timeout(50)
+        terminal.timeout(frames[len(frames)-1])
         terminal.move(0,0)
         terminal.refresh()
 
